@@ -100,7 +100,10 @@ class IdeaView(discord.ui.View):
     async def adopt(self, i, b):
         e = i.message.embeds[0]; e.title = "🔥 Idée en cours"; e.color = 0x9B59B6
         nv = discord.ui.View(timeout=None); btn = discord.ui.Button(label="Mise en place ✅", style=discord.ButtonStyle.success, custom_id="idea_fin_v9")
-        async def fin(i2): e.title = "💎 Idée Appliquée"; await i2.response.edit_message(embed=e, view=None)
+        async def fin(i2): 
+            e2 = i2.message.embeds[0]; e2.title = "💎 Idée Appliquée"; e2.color = 0x2ECC71
+            e2.add_field(name="Finalisé par", value=i2.user.mention)
+            await i2.response.edit_message(embed=e2, view=None)
         btn.callback = fin; nv.add_item(btn); await i.response.edit_message(embed=e, view=nv)
 
 class ProbView(discord.ui.View):
@@ -150,12 +153,6 @@ async def table_show(i, table_id: str):
     v = TablePaginator(table_id)
     if not v.embeds: return await i.response.send_message("❌", ephemeral=True)
     await i.response.send_message(embed=v.embeds[0], view=v)
-
-@bot.tree.command(name="refresh_views")
-async def refresh(i):
-    for t in load_tables(): bot.add_view(TablePaginator(t))
-    for v in [GoalView(), IdeaView(), ProbView()]: bot.add_view(v)
-    await i.response.send_message("✅", ephemeral=True)
 
 @bot.event
 async def on_ready():
