@@ -120,30 +120,32 @@ class TaskModal(discord.ui.Modal):
         if self.v_type == "goal": e.title, e.color, v = "🎯 Objectif", 0x3498DB, GoalView()
         elif self.v_type == "idea": e.title, e.color, v = "💡 Idée", 0xF1C40F, IdeaView()
         else: e.title, e.color, v = "🚨 Problème", 0xE74C3C, ProbView()
-        await c.send(embed=e, view=v); await i.response.send_message("✅ Envoyé.", ephemeral=True)
+        await c.send(embed=e, view=v); await i.response.send_message("✅", ephemeral=True)
 
 # --- COMMANDS ---
 @bot.tree.command(name="ping")
 async def ping(i): await i.response.send_message(f"🏓 **{round(bot.latency*1000)}ms**")
 
-@bot.tree.command(name="clean", description="Supprimer des messages")
+@bot.tree.command(name="clean")
 async def clean(i, nombre: int):
-    if not i.user.guild_permissions.manage_messages: return await i.response.send_message("❌ Permissions insuffisantes.", ephemeral=True)
-    await i.response.defer(ephemeral=True)
-    deleted = await i.channel.purge(limit=nombre)
-    await i.followup.send(f"🗑️ **{len(deleted)}** messages supprimés.")
+    if not i.user.guild_permissions.manage_messages: return await i.response.send_message("❌", ephemeral=True)
+    await i.response.defer(ephemeral=True); await i.channel.purge(limit=nombre)
+    await i.followup.send(f"🗑️ **{nombre}** messages nettoyés.")
 
 @bot.tree.command(name="goal")
-async def goal(i): await i.response.send_modal(TaskModal("🎯 Nouvel Objectif", CHANNEL_GOAL_ID, "goal"))
+async def goal(i): await i.response.send_modal(TaskModal("🎯 Objectif", CHANNEL_GOAL_ID, "goal"))
 
 @bot.tree.command(name="idea")
-async def idea(i): await i.response.send_modal(TaskModal("💡 Nouvelle Idée", CHANNEL_IDEA_ID, "idea"))
+async def idea(i): await i.response.send_modal(TaskModal("💡 Idée", CHANNEL_IDEA_ID, "idea"))
 
 @bot.tree.command(name="problem")
-async def problem(i): await i.response.send_modal(TaskModal("🚨 Signalement", CHANNEL_PROBLEM_ID, "problem"))
+async def problem(i): await i.response.send_modal(TaskModal("🚨 Problème", CHANNEL_PROBLEM_ID, "problem"))
+
+async def table_autocomp(i, cur):
+    return [app_commands.Choice(name=d["name"], value=t) for t, d in load_tables().items() if cur.lower() in d["name"].lower()][:25]
 
 @bot.tree.command(name="table_show")
-@app_commands.autocomplete(table_id=lambda i, c: [app_commands.Choice(name=d["name"], value=t) for t, d in load_tables().items() if c.lower() in d["name"].lower()][:25])
+@app_commands.autocomplete(table_id=table_autocomp)
 async def table_show(i, table_id: str):
     v = TablePaginator(table_id)
     if not v.embeds: return await i.response.send_message("❌", ephemeral=True)
@@ -152,7 +154,7 @@ async def table_show(i, table_id: str):
 @bot.tree.command(name="refresh_views")
 async def refresh(i):
     for t in load_tables(): bot.add_view(TablePaginator(t))
-    bot.add_view(GoalView()); bot.add_view(IdeaView()); bot.add_view(ProbView())
+    for v in [GoalView(), IdeaView(), ProbView()]: bot.add_view(v)
     await i.response.send_message("✅", ephemeral=True)
 
 @bot.event
